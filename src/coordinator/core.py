@@ -591,3 +591,141 @@ class CentralCoordinator:
             await websocket.close()
         
         logger.info("Central coordinator shutdown complete")
+    
+    async def start_api_server(self, host: str = '0.0.0.0', port: int = 5000):
+        """Start the API server."""
+        try:
+            self.api_server = CoordinatorAPI(self)
+            logger.info(f"API server started on {host}:{port}")
+            # The API server will run in its own thread
+        except Exception as e:
+            logger.error(f"Failed to start API server: {e}")
+            raise
+    
+    def get_dashboard_data(self) -> Dict[str, Any]:
+        """Get dashboard data."""
+        return self.dashboard_manager.get_dashboard_data()
+    
+    async def add_alert(self, alert: Alert) -> None:
+        """Add an alert to the system."""
+        await self.alert_manager.process_alert(alert)
+    
+    def get_alerts(self, hours: int = 24, severity: str = None) -> List[Alert]:
+        """Get alerts from the alert manager."""
+        return self.alert_manager.get_alerts(hours=hours, severity=severity)
+    
+    def get_new_alerts(self, since_minutes: int = 5) -> List[Alert]:
+        """Get new alerts."""
+        return self.alert_manager.get_new_alerts(since_minutes=since_minutes)
+    
+    def update_alert_status(self, alert_id: str, status: str) -> bool:
+        """Update alert status."""
+        return self.alert_manager.update_alert_status(alert_id, status)
+    
+    def get_system_metrics(self, node_id: str = None, hours: int = 1) -> List[Dict[str, Any]]:
+        """Get system metrics."""
+        return self.data_processor.get_processed_data('system_metrics', hours=hours)
+    
+    def get_node_metrics(self, node_id: str) -> Dict[str, Any]:
+        """Get metrics for a specific node."""
+        return self.resource_manager.get_resource_status(node_id)
+    
+    def send_command(self, node_id: str, command: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Send command to a node."""
+        # Implementation would send actual command to node
+        logger.info(f"Sending command '{command}' to node {node_id}")
+        return {'status': 'sent', 'command': command, 'params': params}
+    
+    def is_node_in_maintenance(self, node_id: str) -> bool:
+        """Check if node is in maintenance mode."""
+        node = self.nodes.get(node_id)
+        return node and getattr(node, 'maintenance_mode', False)
+    
+    def get_node_connections(self, node_id: str) -> List[str]:
+        """Get connections for a node."""
+        # Simplified implementation
+        return []
+    
+    async def ping_node(self, node_id: str) -> bool:
+        """Ping a node to check connectivity."""
+        # Implementation would actually ping the node
+        logger.info(f"Pinging node {node_id}")
+        return True
+    
+    async def process_node_data(self, node_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Process data from a node."""
+        # Add node_id to data
+        data['node_id'] = node_id
+        
+        # Process through data processor
+        result = await self.data_processor.process_data(data)
+        
+        # Update node's last data
+        if node_id in self.nodes:
+            self.nodes[node_id].last_data = data
+            self.nodes[node_id].last_heartbeat = datetime.now()
+        
+        return result
+    
+    async def register_node_resources(self, node_id: str, node_type: str, resources: Dict[str, float]) -> bool:
+        """Register node resources."""
+        return self.resource_manager.register_node_resources(node_id, node_type, resources)
+    
+    async def update_node_resource_usage(self, node_id: str, usage: Dict[str, float]) -> bool:
+        """Update node resource usage."""
+        return self.resource_manager.update_resource_usage(node_id, usage)
+    
+    def find_optimal_node_for_task(self, resource_requirements: Dict[str, float]) -> Optional[str]:
+        """Find optimal node for a task."""
+        return self.resource_manager.find_optimal_node(resource_requirements)
+    
+    def balance_load_for_service(self, service_name: str) -> List[str]:
+        """Balance load for a service."""
+        return self.resource_manager.balance_load(service_name)
+    
+    def get_processing_metrics(self) -> Dict[str, Any]:
+        """Get data processing metrics."""
+        return self.data_processor.get_processing_metrics()
+    
+    def get_alert_statistics(self) -> Dict[str, Any]:
+        """Get alert statistics."""
+        return self.alert_manager.get_alert_statistics()
+    
+    def get_resource_management_metrics(self) -> Dict[str, Any]:
+        """Get resource management metrics."""
+        return self.resource_manager.get_management_metrics()
+    
+    def get_coordinator_status(self) -> Dict[str, Any]:
+        """Get comprehensive coordinator status."""
+        return {
+            'uptime': (datetime.now() - datetime.fromisoformat(self.stats['uptime_start'])).total_seconds(),
+            'active_nodes': len([n for n in self.nodes.values() if n.status == 'active']),
+            'total_nodes': len(self.nodes),
+            'recent_alerts': len(self.get_alerts(hours=1)),
+            'processing_metrics': self.get_processing_metrics(),
+            'alert_statistics': self.get_alert_statistics(),
+            'resource_metrics': self.get_resource_management_metrics(),
+            'system_health': self._calculate_system_health()
+        }
+    
+    def _calculate_system_health(self) -> str:
+        """Calculate overall system health."""
+        if not self.nodes:
+            return 'unknown'
+        
+        active_nodes = len([n for n in self.nodes.values() if n.status == 'active'])
+        total_nodes = len(self.nodes)
+        
+        if total_nodes == 0:
+            return 'unknown'
+        
+        health_percentage = (active_nodes / total_nodes) * 100
+        
+        if health_percentage >= 95:
+            return 'excellent'
+        elif health_percentage >= 80:
+            return 'good'
+        elif health_percentage >= 60:
+            return 'fair'
+        else:
+            return 'poor'
