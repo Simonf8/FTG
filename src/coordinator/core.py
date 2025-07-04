@@ -10,11 +10,18 @@ from collections import defaultdict
 
 from ..common.models import (
     EdgeNodeStatus, Alert, SensorData, SystemMetrics, NodeType,
-    ProcessingJob, Location
+    ProcessingJob, Location, EdgeNode
 )
 from ..common.config import get_config
 from ..common.logger import get_logger
 from ..common.utils import get_current_timestamp, generate_id
+
+# Import new coordinator components
+from .api import CoordinatorAPI
+from .dashboard import DashboardManager
+from .data_processor import DataProcessor
+from .alert_manager import AlertManager
+from .resource_manager import ResourceManager
 
 logger = get_logger(__name__)
 
@@ -26,6 +33,7 @@ class CentralCoordinator:
         self.config = config or get_config()
         
         # Node management
+        self.nodes: Dict[str, EdgeNode] = {}
         self.registered_nodes: Dict[str, EdgeNodeStatus] = {}
         self.node_heartbeats: Dict[str, datetime] = {}
         self.offline_nodes: Set[str] = set()
@@ -35,12 +43,12 @@ class CentralCoordinator:
         self.system_metrics: Dict[str, Any] = {}
         self.sensor_data_buffer: Dict[str, List[SensorData]] = defaultdict(list)
         
-        # Components
+        # Initialize new components
         self.api_server = None
-        self.dashboard_server = None
-        self.data_processor = None
-        self.alert_manager = None
-        self.resource_manager = None
+        self.dashboard_manager = DashboardManager(self)
+        self.data_processor = DataProcessor(self)
+        self.alert_manager = AlertManager(self)
+        self.resource_manager = ResourceManager(self)
         self.websocket_connections: Dict[str, Any] = {}
         
         # Background tasks
