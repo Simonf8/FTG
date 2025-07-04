@@ -1,0 +1,90 @@
+# System Environment
+environment: development
+debug: true
+log_level: INFO
+
+# Security settings
+secret_key: ""
+jwt_expire_hours: 24
+encrypt_data: true
+
+# Performance settings
+max_workers: 4
+queue_size: 1000
+timeout_seconds: 30
+
+# Database configuration
+database:
+  host: localhost
+  port: 5432
+  username: edge_ai
+  password: password
+  database: edge_network
+
+# Redis configuration
+redis:
+  host: localhost
+  port: 6379
+  db: 0
+  password: null
+
+# MQTT broker configuration
+mqtt:
+  host: localhost
+  port: 1883
+  username: null
+  password: null
+  topics:
+    sensors: "sensors/+/data"
+    alerts: "alerts/+"
+    commands: "commands/+"
+    status: "status/+"
+
+# AI model configuration
+ai_models:
+  model_path: "models/"
+  traffic_model: "traffic_yolo_v5.pt"
+  crime_model: "crime_detection_v2.pt"
+  environment_model: "env_lstm_v1.pt"
+  update_interval: 3600  # seconds
+  confidence_threshold: 0.7
+
+# Edge node configuration
+edge_node:
+  node_id: "edge_node_01"
+  node_type: "traffic"  # traffic, crime, environment, hybrid
+  location:
+    lat: 37.7749
+    lon: -122.4194
+  sensors:
+    - sensor_id: "camera_01"
+      type: "camera"
+      latitude: 37.7749
+      longitude: -122.4194
+      address: "Main Street & 1st Ave"
+      camera_id: 0
+      resolution: [1920, 1080]
+      fps: 30
+      read_interval: 1.0
+    - sensor_id: "traffic_counter_01"
+      type: "traffic_counter"
+      latitude: 37.7749
+      longitude: -122.4194
+      address: "Main Street & 1st Ave"
+      lanes: 4
+      read_interval: 5.0
+  processing_interval: 1  # seconds
+  max_local_storage: 1000  # MB
+  heartbeat_interval: 30  # seconds
+
+# Central coordinator configuration
+coordinator:
+  host: "0.0.0.0"
+  port: 8080
+  max_connections: 1000
+  data_retention_days: 30
+  alert_thresholds:
+    traffic_congestion: 0.8
+    crime_probability: 0.6
+    air_quality_index: 150
+    noise_level: 70
